@@ -121,6 +121,7 @@ if __name__ == "__main__":
                 for ad in ads:
                     if ad.check_close(mx, my):
                         ads.remove(ad)
+                        break
                     elif ad.check_ad_click(mx, my):
                         ads.append(NoMiniGame())
 
