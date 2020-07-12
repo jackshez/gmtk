@@ -1,8 +1,4 @@
-"""
-v0.1
-TODO name game
 
-"""
 import glob
 
 import pygame
@@ -20,7 +16,13 @@ BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 YELLOW = (255, 216, 0)
+text = (207, 95, 63)
+
 BACKGROUND = pygame.image.load("assets/img/bg2.png")
+
+INTRO = pygame.image.load("assets/img/start.png")
+
+WIN = pygame.image.load("assets/img/win.png")
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT), FULLSCREEN)
 
@@ -95,12 +97,23 @@ class NoMiniGame:
 
 
 ads = [NoMiniGame()]
+ad_streak = 0
+ad_countdown_min = 2
+ad_countdown_max = 5
+ad_countdown = random.randrange(ad_countdown_min, ad_countdown_max)
+count = 0
+
+score = 10000
+
+intro = True
+win = False
 
 if __name__ == "__main__":
     pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=512)
     pygame.init()
     clock = pygame.time.Clock()
     mainLoop = True
+    font = pygame.font.SysFont("monospace", 50)
     screen.blit(BACKGROUND, BACKGROUND.get_rect())
 
     while mainLoop:
@@ -115,19 +128,56 @@ if __name__ == "__main__":
             sys.exit(0)
         ev = pygame.event.get()
 
-        # proceed events
-        for event in ev:
-            if event.type == pygame.MOUSEBUTTONUP:
-                for ad in ads:
-                    if ad.check_close(mx, my):
-                        ads.remove(ad)
-                        break
-                    elif ad.check_ad_click(mx, my):
-                        ads.append(NoMiniGame())
+        if intro:
+            ads = [NoMiniGame()]
+            for event in ev:
+                if event.type == pygame.MOUSEBUTTONUP:
+                    intro = False
+            screen.blit(INTRO, (0, 0, HEIGHT, WIDTH))
+        else:
+            if win and len(ads) == 0:
+                for event in ev:
+                    if event.type == pygame.MOUSEBUTTONUP:
+                        intro = True
+                        win = False
+                screen.blit(WIN, (0, 0, HEIGHT, WIDTH))
+                label = font.render("SCORE = " + str(score), 1, text)
+                screen.blit(label, (0, 0))
 
-        for ad in ads:
-            ad.draw(screen)
+            else:
+                screen.blit(BACKGROUND, (0, 0, HEIGHT, WIDTH))
+                count += 1
+                if count >= ad_countdown * (FPS / 3):
+                    ads.append(NoMiniGame())
+                    ad_countdown = random.randrange(ad_countdown_min, ad_countdown_max)
+                    score -= 100
+                    if len(ads) >= 20:
+                        intro = True
+                    count = 0
+
+                # proceed events
+                for event in ev:
+                    if event.type == pygame.MOUSEBUTTONUP:
+                        for ad in ads:
+                            if ad.check_close(mx, my):
+                                ads.remove(ad)
+                                break
+                            elif ad.check_ad_click(mx, my):
+                                ads.append(NoMiniGame())
+                                ad_countdown = random.randrange(ad_countdown_min, ad_countdown_max)
+                                score -= 100
+                                if len(ads) >= 20:
+                                    intro = True
+                if len(ads) <= 1:
+                    ad_streak += 1
+                    if ad_streak > 10 * FPS:
+                        win = True
+                else:
+                    ad_streak = 0
+
+                for ad in ads:
+                    ad.draw(screen)
+
         pygame.display.flip()
-        screen.blit(BACKGROUND, (0, 0, 1920, 1080))
 
     pygame.quit()
